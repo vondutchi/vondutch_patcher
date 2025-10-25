@@ -12,7 +12,7 @@ import subprocess
 import sys
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import customtkinter as ctk
@@ -48,23 +48,33 @@ class InspectorGUI(ctk.CTk):
         self.process: Optional[subprocess.Popen] = None
 
         self.theme = {
-            "bg": "#0b1220",
-            "panel": "#101a30",
-            "panel_alt": "#14213b",
-            "surface": "#1a2844",
-            "accent": "#38bdf8",
-            "accent_alt": "#22d3ee",
-            "accent_soft": "#1f6feb",
-            "highlight": "#facc15",
-            "text_primary": "#f8fafc",
-            "text_muted": "#94a3b8",
-            "chip_bg": "#16233f",
-            "border": "#1f2a44",
+            "bg": "#0d101a",
+            "panel": "#141a27",
+            "panel_alt": "#1a2132",
+            "surface": "#1f2739",
+            "surface_alt": "#252f45",
+            "toolbar": "#1b2335",
+            "accent": "#0a84ff",
+            "accent_alt": "#3c9dff",
+            "accent_soft": "#1f4fa3",
+            "text_primary": "#f5f7ff",
+            "text_muted": "#9aa7c4",
+            "text_subtle": "#7f8bad",
+            "chip_bg": "#1b2435",
+            "status_bg": "#161d2b",
+            "status_active": "#162642",
+            "status_idle_badge": "#232f45",
+            "outline": "#1f2739",
+            "outline_subtle": "#1a2232",
+            "button_secondary": "#273252",
+            "button_secondary_hover": "#2f3c63",
         }
 
-        self.font_heading = ctk.CTkFont(size=18, weight="bold")
+        self.font_title = ctk.CTkFont(size=28, weight="bold")
+        self.font_heading = ctk.CTkFont(size=17, weight="bold")
         self.font_body = ctk.CTkFont(size=13)
         self.font_small = ctk.CTkFont(size=12)
+        self.font_caption = ctk.CTkFont(size=11, weight="bold")
 
         self._pulse_phase = 0.0
         self._status_pulse_phase = 0.0
@@ -120,73 +130,146 @@ class InspectorGUI(ctk.CTk):
         header.grid_columnconfigure(1, weight=0)
         header.grid_columnconfigure(2, weight=0)
 
-        title = ctk.CTkLabel(
-            header,
-            text="Process Data Inspector",
-            font=ctk.CTkFont(size=26, weight="bold"),
-            text_color=self.theme["text_primary"],
-        )
-        title.grid(row=0, column=0, sticky="w", padx=24, pady=(18, 4))
+        title_stack = ctk.CTkFrame(header, fg_color="transparent")
+        title_stack.grid(row=0, column=0, sticky="w", padx=32, pady=(26, 12))
+        title_stack.grid_columnconfigure(0, weight=1)
 
-        subtitle = ctk.CTkLabel(
-            header,
-            text="Curate scan strategies with real-time feedback and friendly presets.",
+        ctk.CTkLabel(
+            title_stack,
+            text="Process Data Inspector",
+            font=self.font_title,
+            text_color=self.theme["text_primary"],
+        ).grid(row=0, column=0, sticky="w")
+
+        ctk.CTkLabel(
+            title_stack,
+            text="Curate scan strategies with live metrics and carefully tuned presets.",
             font=self.font_body,
             text_color=self.theme["text_muted"],
+            wraplength=520,
+        ).grid(row=1, column=0, sticky="w", pady=(6, 0))
+
+        self.status_card = ctk.CTkFrame(
+            header,
+            fg_color=self.theme["status_bg"],
+            corner_radius=18,
+            border_width=1,
+            border_color=self.theme["outline"],
         )
-        subtitle.grid(row=1, column=0, sticky="w", padx=24, pady=(0, 12))
+        self.status_card.grid(row=0, column=1, rowspan=2, sticky="ne", padx=(0, 24), pady=24)
+        self.status_card.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            self.status_card,
+            text="STATUS",
+            font=self.font_caption,
+            text_color=self.theme["text_subtle"],
+        ).grid(row=0, column=0, sticky="w", padx=20, pady=(18, 6))
 
         self.status_chip = ctk.CTkLabel(
-            header,
+            self.status_card,
             text="Idle",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=18, weight="bold"),
             text_color=self.theme["accent"],
-            fg_color=self.theme["chip_bg"],
-            corner_radius=12,
-            padx=16,
-            pady=8,
+            fg_color=self.theme["status_idle_badge"],
+            corner_radius=14,
+            padx=22,
+            pady=12,
         )
-        self.status_chip.grid(row=0, column=1, padx=16, pady=(18, 4))
+        self.status_chip.grid(row=1, column=0, sticky="we", padx=16)
 
-        appearance_menu = ctk.CTkOptionMenu(
-            header,
-            values=["Dark", "Light", "System"],
+        self.status_caption = ctk.CTkLabel(
+            self.status_card,
+            text="Standing by",
+            font=self.font_small,
+            text_color=self.theme["text_muted"],
+        )
+        self.status_caption.grid(row=2, column=0, sticky="w", padx=20, pady=(8, 18))
+
+        actions_stack = ctk.CTkFrame(header, fg_color="transparent")
+        actions_stack.grid(row=0, column=2, rowspan=2, sticky="ne", padx=(0, 32), pady=24)
+        actions_stack.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            actions_stack,
+            text="APPEARANCE",
+            font=self.font_caption,
+            text_color=self.theme["text_subtle"],
+        ).grid(row=0, column=0, sticky="e")
+
+        self.appearance_control = ctk.CTkSegmentedButton(
+            actions_stack,
+            values=["Light", "Dark", "System"],
             variable=self.appearance_var,
             command=self._change_appearance,
+            unselected_color=self.theme["chip_bg"],
+            selected_color=self.theme["accent"],
+            selected_hover_color=self.theme["accent_alt"],
+            text_color=self.theme["text_primary"],
         )
-        appearance_menu.grid(row=0, column=2, padx=(0, 24), pady=(18, 4))
-        self._style_dropdown(appearance_menu)
+        self.appearance_control.grid(row=1, column=0, sticky="e", pady=(4, 0))
+        self.appearance_control.set(self.appearance_var.get())
 
         help_button = ctk.CTkButton(
-            header,
+            actions_stack,
             text="Quick tour",
             command=self._show_help,
-            fg_color=self.theme["accent"],
-            hover_color=self.theme["accent_alt"],
-            height=34,
+            fg_color=self.theme["button_secondary"],
+            hover_color=self.theme["button_secondary_hover"],
+            height=40,
+            corner_radius=14,
             font=self.font_body,
+            text_color=self.theme["text_primary"],
         )
-        help_button.grid(row=1, column=1, columnspan=2, sticky="e", padx=(0, 24), pady=(0, 12))
+        help_button.grid(row=2, column=0, sticky="e", pady=(16, 0))
 
-        self.header_glow = ctk.CTkFrame(header, fg_color=self.theme["accent"], height=4, corner_radius=0)
+        self.header_glow = ctk.CTkFrame(header, fg_color=self.theme["accent"], height=3, corner_radius=0)
         self.header_glow.grid(row=2, column=0, columnspan=3, sticky="ew")
 
         # --- Main body
         body = ctk.CTkFrame(self, fg_color="transparent")
-        body.grid(row=1, column=0, sticky="nsew", padx=24, pady=(18, 24))
+        body.grid(row=1, column=0, sticky="nsew", padx=32, pady=(24, 32))
         body.grid_rowconfigure(0, weight=1)
         body.grid_columnconfigure(0, weight=0)
         body.grid_columnconfigure(1, weight=1)
 
-        self.controls_panel = ctk.CTkScrollableFrame(
+        controls_shell = ctk.CTkFrame(
             body,
-            width=420,
-            fg_color=self.theme["panel_alt"],
-            corner_radius=18,
-            label_text="Scan Configuration",
-            label_font=ctk.CTkFont(size=18, weight="bold"),
+            fg_color=self.theme["panel"],
+            corner_radius=26,
+            border_width=1,
+            border_color=self.theme["outline"],
         )
-        self.controls_panel.grid(row=0, column=0, sticky="nsw", padx=(0, 24))
+        controls_shell.grid(row=0, column=0, sticky="nsw")
+        controls_shell.grid_rowconfigure(1, weight=1)
+        controls_shell.grid_columnconfigure(0, weight=1)
+
+        controls_header = ctk.CTkFrame(controls_shell, fg_color="transparent")
+        controls_header.grid(row=0, column=0, sticky="we", padx=28, pady=(26, 16))
+        controls_header.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            controls_header,
+            text="Scan Studio",
+            font=ctk.CTkFont(size=20, weight="bold"),
+            text_color=self.theme["text_primary"],
+        ).grid(row=0, column=0, sticky="w")
+
+        ctk.CTkLabel(
+            controls_header,
+            text="Craft an inspection profile and orchestrate runs from one refined console.",
+            font=self.font_small,
+            text_color=self.theme["text_muted"],
+            wraplength=320,
+            justify="left",
+        ).grid(row=1, column=0, sticky="w", pady=(6, 0))
+
+        self.controls_panel = ctk.CTkScrollableFrame(
+            controls_shell,
+            width=420,
+            fg_color="transparent",
+        )
+        self.controls_panel.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 24))
         self.controls_panel.grid_columnconfigure(0, weight=1)
 
         self._section_row = 0
@@ -201,136 +284,167 @@ class InspectorGUI(ctk.CTk):
         self.output_card = ctk.CTkFrame(
             body,
             fg_color=self.theme["panel"],
-            corner_radius=22,
+            corner_radius=28,
             border_width=1,
+            border_color=self.theme["outline"],
         )
-        self.output_card.grid(row=0, column=1, sticky="nsew")
+        self.output_card.grid(row=0, column=1, sticky="nsew", padx=(28, 0))
         self.output_card.grid_columnconfigure(0, weight=1)
         self.output_card.grid_rowconfigure(2, weight=1)
 
+        output_header = ctk.CTkFrame(self.output_card, fg_color="transparent")
+        output_header.grid(row=0, column=0, sticky="we", padx=32, pady=(30, 12))
+        output_header.grid_columnconfigure(0, weight=1)
+
         ctk.CTkLabel(
-            self.output_card,
+            output_header,
             text="Command Output",
             font=ctk.CTkFont(size=22, weight="bold"),
             text_color=self.theme["text_primary"],
-        ).grid(row=0, column=0, sticky="w", padx=24, pady=(24, 6))
+        ).grid(row=0, column=0, sticky="w")
+
+        ctk.CTkLabel(
+            output_header,
+            text="Live logs from process_inspector.py appear here during each run.",
+            font=self.font_small,
+            text_color=self.theme["text_muted"],
+        ).grid(row=1, column=0, sticky="w", pady=(6, 0))
 
         toolbar = ctk.CTkFrame(
             self.output_card,
-            fg_color=self.theme["panel_alt"],
-            corner_radius=14,
+            fg_color=self.theme["toolbar"],
+            corner_radius=18,
         )
-        toolbar.grid(row=1, column=0, sticky="we", padx=24, pady=(0, 12))
+        toolbar.grid(row=1, column=0, sticky="we", padx=32, pady=(0, 16))
         toolbar.grid_columnconfigure(0, weight=1)
         toolbar.grid_columnconfigure(1, weight=0)
         toolbar.grid_columnconfigure(2, weight=0)
 
         self.notification_label = ctk.CTkLabel(
             toolbar,
-            text="Ready to orchestrate your scans.",
+            text="Ready when you are.",
             text_color=self.theme["text_muted"],
             font=self.font_body,
         )
-        self.notification_label.grid(row=0, column=0, sticky="w", padx=16, pady=12)
+        self.notification_label.grid(row=0, column=0, sticky="w", padx=20, pady=14)
 
         auto_scroll_switch = ctk.CTkSwitch(
             toolbar,
             text="Auto-scroll",
             variable=self.auto_scroll_var,
         )
-        auto_scroll_switch.grid(row=0, column=1, padx=16, pady=12)
+        auto_scroll_switch.grid(row=0, column=1, padx=16, pady=14)
 
         clear_button = ctk.CTkButton(
             toolbar,
             text="Clear log",
-            width=110,
+            width=120,
             command=self._clear_output,
-            fg_color=self.theme["surface"],
-            hover_color=self.theme["accent_soft"],
+            fg_color=self.theme["button_secondary"],
+            hover_color=self.theme["button_secondary_hover"],
             font=self.font_body,
+            corner_radius=14,
         )
-        clear_button.grid(row=0, column=2, padx=(0, 16), pady=12)
+        clear_button.grid(row=0, column=2, padx=(0, 20), pady=14)
 
         self.output_text = ctk.CTkTextbox(
             self.output_card,
             wrap="word",
             activate_scrollbars=True,
-            corner_radius=16,
-            fg_color=self.theme["surface"],
+            corner_radius=20,
+            fg_color=self.theme["surface_alt"],
             text_color=self.theme["text_primary"],
         )
-        self.output_text.grid(row=2, column=0, sticky="nsew", padx=24, pady=(0, 18))
+        self.output_text.grid(row=2, column=0, sticky="nsew", padx=32, pady=(0, 18))
 
         controls_tip = (
-            "This interface wraps process_inspector.py. "
+            "Process Data Inspector drives process_inspector.py. "
             "Operate responsibly on single-player experiences you own."
         )
         ctk.CTkLabel(
             self.output_card,
             text=controls_tip,
-            wraplength=720,
+            wraplength=760,
             text_color=self.theme["text_muted"],
-            font=ctk.CTkFont(size=13),
-        ).grid(row=3, column=0, sticky="we", padx=24, pady=(0, 12))
+            font=self.font_body,
+        ).grid(row=3, column=0, sticky="we", padx=32, pady=(0, 8))
 
         self.progress = ctk.CTkProgressBar(
             self.output_card,
             mode="indeterminate",
-            corner_radius=10,
+            corner_radius=12,
             determinate_speed=1.8,
             progress_color=self.theme["accent"],
         )
-        self.progress.grid(row=4, column=0, sticky="we", padx=24, pady=(0, 24))
+        self.progress.grid(row=4, column=0, sticky="we", padx=32, pady=(0, 32))
         self.progress.grid_remove()
 
     # ------------------------------------------------------------------ Section builders
-    def _add_section(self, title: str, description: str | None = None) -> ctk.CTkFrame:
+    def _add_section(
+        self, title: str, description: str | None = None
+    ) -> Tuple[ctk.CTkFrame, int]:
         section = ctk.CTkFrame(
             self.controls_panel,
-            fg_color=self.theme["panel"],
-            corner_radius=18,
+            fg_color=self.theme["surface"],
+            corner_radius=20,
             border_width=1,
+            border_color=self.theme["outline_subtle"],
         )
         section.grid(
             row=self._section_row,
             column=0,
             sticky="we",
-            padx=18,
-            pady=(18 if self._section_row == 0 else 14, 0),
+            padx=12,
+            pady=(12 if self._section_row == 0 else 18, 0),
         )
         section.grid_columnconfigure(0, weight=1)
         self._section_row += 1
 
+        header = ctk.CTkFrame(section, fg_color="transparent")
+        header.grid(row=0, column=0, sticky="we", padx=20, pady=(20, 10))
+        header.grid_columnconfigure(1, weight=1)
+
         ctk.CTkLabel(
-            section,
+            header,
+            text="",
+            width=10,
+            height=10,
+            corner_radius=5,
+            fg_color=self.theme["accent"],
+        ).grid(row=0, column=0, padx=(0, 12))
+
+        ctk.CTkLabel(
+            header,
             text=title,
             text_color=self.theme["text_primary"],
             font=self.font_heading,
-        ).grid(row=0, column=0, sticky="w", padx=18, pady=(18, 2))
+        ).grid(row=0, column=1, sticky="w")
 
-        accent_bar = ctk.CTkFrame(section, fg_color=self.theme["accent"], height=2, corner_radius=2)
-        accent_bar.grid(row=1, column=0, sticky="we", padx=18, pady=(0, 10))
-
+        next_row = 1
         if description:
             ctk.CTkLabel(
                 section,
                 text=description,
                 text_color=self.theme["text_muted"],
                 font=self.font_body,
-                wraplength=360,
+                wraplength=340,
                 justify="left",
-            ).grid(row=2, column=0, sticky="we", padx=18, pady=(0, 12))
-            row = 3
-        else:
-            row = 2
+            ).grid(row=next_row, column=0, sticky="we", padx=20, pady=(0, 12))
+            next_row += 1
 
-        spacer = ctk.CTkFrame(section, fg_color="transparent", height=2)
-        spacer.grid(row=row, column=0, sticky="we", padx=18, pady=(0, 12))
-        section.rowconfigure(row, minsize=2)
-        return section
+        divider = ctk.CTkFrame(
+            section,
+            fg_color=self.theme["outline_subtle"],
+            height=1,
+            corner_radius=1,
+        )
+        divider.grid(row=next_row, column=0, sticky="we", padx=20, pady=(0, 18))
+        section.rowconfigure(next_row, minsize=1)
+
+        return section, next_row + 1
 
     def _build_process_section(self) -> None:
-        section = self._add_section(
+        section, row = self._add_section(
             "Target Process",
             "Connect to a running process using its PID or experiment with the mock mode for demos.",
         )
@@ -341,16 +455,16 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.pid_var,
             corner_radius=12,
             border_width=1,
-        ).grid(row=2, column=0, sticky="we", padx=18, pady=(0, 10))
+        ).grid(row=row, column=0, sticky="we", padx=20, pady=(0, 12))
 
         ctk.CTkSwitch(
             section,
             text="Use mock process data",
             variable=self.mock_var,
-        ).grid(row=3, column=0, sticky="we", padx=18, pady=(0, 12))
+        ).grid(row=row + 1, column=0, sticky="we", padx=20, pady=(0, 4))
 
     def _build_scan_section(self) -> None:
-        section = self._add_section(
+        section, row = self._add_section(
             "Scan Strategy",
             "Toggle between dynamic smart scanning and manual targeting depending on your workflow.",
         )
@@ -364,11 +478,11 @@ class InspectorGUI(ctk.CTk):
             selected_color=self.theme["accent"],
             selected_hover_color=self.theme["accent_alt"],
         )
-        segmented.grid(row=2, column=0, sticky="we", padx=18, pady=(0, 12))
+        segmented.grid(row=row, column=0, sticky="we", padx=20, pady=(0, 12))
         segmented.set("Dynamic" if self.dynamic_var.get() else "Manual")
 
         preset_row = ctk.CTkFrame(section, fg_color="transparent")
-        preset_row.grid(row=3, column=0, sticky="we", padx=18, pady=(0, 12))
+        preset_row.grid(row=row + 1, column=0, sticky="we", padx=20, pady=(0, 12))
         preset_row.grid_columnconfigure(1, weight=1)
         ctk.CTkLabel(
             preset_row,
@@ -386,7 +500,7 @@ class InspectorGUI(ctk.CTk):
         self._style_dropdown(preset_menu)
 
         self.dynamic_frame = ctk.CTkFrame(section, fg_color="transparent")
-        self.dynamic_frame.grid(row=4, column=0, sticky="we", padx=18)
+        self.dynamic_frame.grid(row=row + 2, column=0, sticky="we", padx=20, pady=(0, 4))
         self.dynamic_frame.grid_columnconfigure(0, weight=1)
 
         ctk.CTkEntry(
@@ -395,14 +509,14 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.max_steps_var,
             corner_radius=12,
             border_width=1,
-        ).grid(row=0, column=0, sticky="we", pady=(0, 10))
+        ).grid(row=0, column=0, sticky="we", pady=(0, 12))
 
         value_kind_combo = ctk.CTkComboBox(
             self.dynamic_frame,
             values=["int32", "int64", "float", "double"],
             variable=self.value_kind_var,
         )
-        value_kind_combo.grid(row=1, column=0, sticky="we", pady=(0, 10))
+        value_kind_combo.grid(row=1, column=0, sticky="we", pady=(0, 12))
         self._style_dropdown(value_kind_combo)
 
         ctk.CTkEntry(
@@ -411,16 +525,16 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.chunk_size_var,
             corner_radius=12,
             border_width=1,
-        ).grid(row=2, column=0, sticky="we", pady=(0, 10))
+        ).grid(row=2, column=0, sticky="we", pady=(0, 12))
 
     def _build_manual_section(self) -> None:
-        section = self._add_section(
+        section, row = self._add_section(
             "Manual Overrides",
             "Fine tune scan values and thresholds when you know exactly what to look for.",
         )
 
         self.manual_frame = ctk.CTkFrame(section, fg_color="transparent")
-        self.manual_frame.grid(row=2, column=0, sticky="we", padx=18)
+        self.manual_frame.grid(row=row, column=0, sticky="we", padx=20, pady=(0, 4))
         self.manual_frame.grid_columnconfigure(0, weight=1)
 
         manual_type_combo = ctk.CTkComboBox(
@@ -428,7 +542,7 @@ class InspectorGUI(ctk.CTk):
             values=MANUAL_VALUE_TYPES,
             variable=self.value_type_var,
         )
-        manual_type_combo.grid(row=0, column=0, sticky="we", pady=(0, 10))
+        manual_type_combo.grid(row=0, column=0, sticky="we", pady=(0, 12))
         self._style_dropdown(manual_type_combo)
 
         ctk.CTkEntry(
@@ -437,13 +551,13 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.manual_value_var,
             corner_radius=12,
             border_width=1,
-        ).grid(row=1, column=0, sticky="we", pady=(0, 10))
+        ).grid(row=1, column=0, sticky="we", pady=(0, 12))
 
         ctk.CTkSwitch(
             self.manual_frame,
             text="Allow rescan",
             variable=self.allow_rescan_var,
-        ).grid(row=2, column=0, sticky="we", pady=(0, 10))
+        ).grid(row=2, column=0, sticky="we", pady=(0, 12))
 
         ctk.CTkEntry(
             self.manual_frame,
@@ -451,16 +565,16 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.reference_depth_var,
             corner_radius=12,
             border_width=1,
-        ).grid(row=3, column=0, sticky="we", pady=(0, 10))
+        ).grid(row=3, column=0, sticky="we", pady=(0, 12))
 
     def _build_persistence_section(self) -> None:
-        section = self._add_section(
+        section, row = self._add_section(
             "Sessions & History",
             "Save new results or reload a previous capture without leaving the app.",
         )
 
         save_row = ctk.CTkFrame(section, fg_color="transparent")
-        save_row.grid(row=2, column=0, sticky="we", padx=18, pady=(0, 12))
+        save_row.grid(row=row, column=0, sticky="we", padx=20, pady=(0, 12))
         save_row.grid_columnconfigure(0, weight=1)
         ctk.CTkEntry(
             save_row,
@@ -474,13 +588,14 @@ class InspectorGUI(ctk.CTk):
             text="Save as…",
             width=110,
             command=self.browse_save_path,
-            fg_color=self.theme["surface"],
-            hover_color=self.theme["accent_soft"],
+            fg_color=self.theme["button_secondary"],
+            hover_color=self.theme["button_secondary_hover"],
             font=self.font_body,
+            corner_radius=14,
         ).grid(row=0, column=1, padx=(12, 0))
 
         load_row = ctk.CTkFrame(section, fg_color="transparent")
-        load_row.grid(row=3, column=0, sticky="we", padx=18)
+        load_row.grid(row=row + 1, column=0, sticky="we", padx=20)
         load_row.grid_columnconfigure(0, weight=1)
         ctk.CTkEntry(
             load_row,
@@ -494,13 +609,14 @@ class InspectorGUI(ctk.CTk):
             text="Browse",
             width=110,
             command=self.browse_load_path,
-            fg_color=self.theme["surface"],
-            hover_color=self.theme["accent_soft"],
+            fg_color=self.theme["button_secondary"],
+            hover_color=self.theme["button_secondary_hover"],
             font=self.font_body,
+            corner_radius=14,
         ).grid(row=0, column=1, padx=(12, 0))
 
     def _build_addon_section(self) -> None:
-        section = self._add_section(
+        section, row = self._add_section(
             "Addon Autopatch",
             "Push discovered values to your addon configuration when you are ready to automate patches.",
         )
@@ -509,10 +625,10 @@ class InspectorGUI(ctk.CTk):
             section,
             text="Enable addon autopatch",
             variable=self.addon_enable_var,
-        ).grid(row=2, column=0, sticky="we", padx=18, pady=(0, 12))
+        ).grid(row=row, column=0, sticky="we", padx=20, pady=(0, 12))
 
         form = ctk.CTkFrame(section, fg_color="transparent")
-        form.grid(row=3, column=0, sticky="we", padx=18)
+        form.grid(row=row + 1, column=0, sticky="we", padx=20, pady=(0, 4))
         form.grid_columnconfigure(0, weight=1)
 
         ctk.CTkEntry(
@@ -521,14 +637,14 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.patch_value_var,
             corner_radius=12,
             border_width=1,
-        ).grid(row=0, column=0, sticky="we", pady=(0, 10))
+        ).grid(row=0, column=0, sticky="we", pady=(0, 12))
 
         patch_type_combo = ctk.CTkComboBox(
             form,
             values=["int32", "int64", "float", "double"],
             variable=self.patch_type_var,
         )
-        patch_type_combo.grid(row=1, column=0, sticky="we", pady=(0, 10))
+        patch_type_combo.grid(row=1, column=0, sticky="we", pady=(0, 12))
         self._style_dropdown(patch_type_combo)
 
         ctk.CTkEntry(
@@ -537,7 +653,7 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.auto_threshold_var,
             corner_radius=12,
             border_width=1,
-        ).grid(row=2, column=0, sticky="we", pady=(0, 10))
+        ).grid(row=2, column=0, sticky="we", pady=(0, 12))
 
         ctk.CTkEntry(
             form,
@@ -545,7 +661,7 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.enforce_interval_var,
             corner_radius=12,
             border_width=1,
-        ).grid(row=3, column=0, sticky="we", pady=(0, 10))
+        ).grid(row=3, column=0, sticky="we", pady=(0, 12))
 
         ctk.CTkSwitch(
             form,
@@ -564,15 +680,22 @@ class InspectorGUI(ctk.CTk):
             corner_radius=12,
             border_width=1,
         ).grid(row=0, column=0, sticky="we", pady=(0, 12))
-        ctk.CTkButton(config_row, text="Browse", width=100, command=self.browse_config).grid(
-            row=0, column=1, padx=(12, 0)
-        )
+        ctk.CTkButton(
+            config_row,
+            text="Browse",
+            width=100,
+            command=self.browse_config,
+            fg_color=self.theme["button_secondary"],
+            hover_color=self.theme["button_secondary_hover"],
+            font=self.font_body,
+            corner_radius=14,
+        ).grid(row=0, column=1, padx=(12, 0))
 
     def _build_action_section(self) -> None:
-        section = self._add_section("Controls", "Ready when you are.")
+        section, row = self._add_section("Controls", "Ready when you are.")
 
         button_row = ctk.CTkFrame(section, fg_color="transparent")
-        button_row.grid(row=2, column=0, sticky="we", padx=18, pady=(0, 12))
+        button_row.grid(row=row, column=0, sticky="we", padx=20, pady=(0, 16))
         button_row.grid_columnconfigure((0, 1), weight=1)
 
         ctk.CTkButton(
@@ -583,6 +706,7 @@ class InspectorGUI(ctk.CTk):
             fg_color=self.theme["accent"],
             hover_color=self.theme["accent_alt"],
             font=ctk.CTkFont(size=16, weight="bold"),
+            corner_radius=18,
         ).grid(row=0, column=0, sticky="we", padx=(0, 10))
 
         ctk.CTkButton(
@@ -590,9 +714,10 @@ class InspectorGUI(ctk.CTk):
             text="Stop",
             command=self.stop_process,
             height=48,
-            fg_color=self.theme["surface"],
-            hover_color=self.theme["accent_soft"],
+            fg_color=self.theme["button_secondary"],
+            hover_color=self.theme["button_secondary_hover"],
             font=ctk.CTkFont(size=16, weight="bold"),
+            corner_radius=18,
         ).grid(row=0, column=1, sticky="we")
 
         ctk.CTkLabel(
@@ -602,15 +727,16 @@ class InspectorGUI(ctk.CTk):
             font=self.font_small,
             wraplength=360,
             justify="left",
-        ).grid(row=3, column=0, sticky="we", padx=18, pady=(0, 18))
+        ).grid(row=row + 1, column=0, sticky="we", padx=20, pady=(0, 18))
 
         preview_card = ctk.CTkFrame(
             section,
-            fg_color=self.theme["panel"],
-            corner_radius=16,
+            fg_color=self.theme["surface_alt"],
+            corner_radius=18,
             border_width=1,
+            border_color=self.theme["outline_subtle"],
         )
-        preview_card.grid(row=4, column=0, sticky="we", padx=18, pady=(0, 18))
+        preview_card.grid(row=row + 2, column=0, sticky="we", padx=20, pady=(0, 18))
         preview_card.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
@@ -618,18 +744,18 @@ class InspectorGUI(ctk.CTk):
             text="Command preview",
             font=self.font_body,
             text_color=self.theme["text_primary"],
-        ).grid(row=0, column=0, sticky="w", padx=16, pady=(16, 6))
+        ).grid(row=0, column=0, sticky="w", padx=20, pady=(18, 6))
 
         self.command_preview = ctk.CTkTextbox(
             preview_card,
             height=72,
             wrap="word",
-            corner_radius=12,
-            fg_color=self.theme["surface"],
+            corner_radius=14,
+            fg_color=self.theme["panel"],
             text_color=self.theme["text_primary"],
             activate_scrollbars=False,
         )
-        self.command_preview.grid(row=1, column=0, sticky="we", padx=16)
+        self.command_preview.grid(row=1, column=0, sticky="we", padx=20)
         self.command_preview.configure(state="disabled")
 
         ctk.CTkButton(
@@ -640,26 +766,26 @@ class InspectorGUI(ctk.CTk):
             hover_color=self.theme["accent_alt"],
             height=36,
             font=ctk.CTkFont(size=14, weight="bold"),
-        ).grid(row=2, column=0, sticky="e", padx=16, pady=(12, 16))
+            corner_radius=14,
+        ).grid(row=2, column=0, sticky="e", padx=20, pady=(14, 20))
 
         self._update_mode_visibility()
 
     # ------------------------------------------------------------------ UI helpers
     def _style_dropdown(self, widget: Any) -> None:
         options: Dict[str, object] = {
-            "fg_color": self.theme["surface"],
+            "fg_color": self.theme["panel"],
             "text_color": self.theme["text_primary"],
             "button_color": self.theme["accent"],
             "button_hover_color": self.theme["accent_alt"],
-            "dropdown_fg_color": self.theme["panel_alt"],
+            "dropdown_fg_color": self.theme["surface_alt"],
             "dropdown_hover_color": self.theme["accent_soft"],
-            "border_width": 1,
-            "corner_radius": 10,
+            "corner_radius": 12,
         }
         for key, value in options.items():
             try:
                 widget.configure(**{key: value})
-            except (TclError, AttributeError):
+            except (TclError, AttributeError, ValueError):
                 continue
 
     def _on_scan_mode_change(self, value: str) -> None:
@@ -700,19 +826,41 @@ class InspectorGUI(ctk.CTk):
     def _set_status(self, text: str, running: bool) -> None:
         self.status_chip.configure(
             text=text,
-            text_color=self.theme["accent"] if running else self.theme["text_muted"],
-            fg_color="#1b2c4b" if running else self.theme["chip_bg"],
+            text_color=self.theme["text_primary"] if running else self.theme["accent"],
         )
-        if running and not self._status_animation_running:
-            self.progress.grid()
-            self.progress.start()
-            self._status_animation_running = True
-            self._schedule_status_pulse()
-        elif not running and self._status_animation_running:
-            self.progress.stop()
-            self.progress.grid_remove()
-            self._status_animation_running = False
-            self._cancel_status_pulse()
+        if running:
+            self.status_card.configure(
+                fg_color=self.theme["status_active"],
+                border_color=self.theme["accent"],
+            )
+            self.status_caption.configure(text="Processing live output")
+            self.status_chip.configure(fg_color=self.theme["accent"])
+            if not self._status_animation_running:
+                self.progress.grid()
+                self.progress.start()
+                self._status_animation_running = True
+                self._schedule_status_pulse()
+        else:
+            self.status_card.configure(
+                fg_color=self.theme["status_bg"],
+                border_color=self.theme["outline"],
+            )
+            lowered = text.lower()
+            if "stop" in lowered:
+                caption = "Session halted by user"
+            elif "error" in lowered:
+                caption = "Attention required"
+            elif "idle" in lowered:
+                caption = "Standing by"
+            else:
+                caption = "Awaiting next scan"
+            self.status_caption.configure(text=caption)
+            self.status_chip.configure(fg_color=self.theme["status_idle_badge"])
+            if self._status_animation_running:
+                self.progress.stop()
+                self.progress.grid_remove()
+                self._status_animation_running = False
+                self._cancel_status_pulse()
 
     def _animate_header_glow(self) -> None:
         self._pulse_phase = (self._pulse_phase + 0.06) % (2 * math.pi)
@@ -729,12 +877,12 @@ class InspectorGUI(ctk.CTk):
         if self._status_pulse_job is not None:
             self.after_cancel(self._status_pulse_job)
             self._status_pulse_job = None
-            self.status_chip.configure(fg_color="#1b2c4b")
+            self.status_chip.configure(fg_color=self.theme["status_idle_badge"])
 
     def _animate_status_chip(self) -> None:
         self._status_pulse_phase = (self._status_pulse_phase + 0.12) % (2 * math.pi)
         glow = (1 - math.cos(self._status_pulse_phase)) / 2
-        color = self._blend_colors("#2563eb", "#38bdf8", glow)
+        color = self._blend_colors(self.theme["accent"], self.theme["accent_alt"], glow)
         self.status_chip.configure(fg_color=color)
         if self._status_animation_running:
             self._status_pulse_job = self.after(60, self._animate_status_chip)
@@ -762,8 +910,9 @@ class InspectorGUI(ctk.CTk):
         return to_hex(blended)
 
     def _change_appearance(self, value: str) -> None:
+        self.appearance_var.set(value)
         ctk.set_appearance_mode(value)
-        self.notification_label.configure(text=f"Appearance set to {value} mode.")
+        self.notification_label.configure(text=f"Switched to {value.lower()} appearance.")
 
     def _show_help(self) -> None:
         message = (
