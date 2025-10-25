@@ -113,7 +113,6 @@ class InspectorGUI(ctk.CTk):
             self,
             fg_color=self.theme["panel"],
             corner_radius=0,
-            border_color=self.theme["border"],
             border_width=0,
         )
         header.grid(row=0, column=0, sticky="ew")
@@ -203,7 +202,6 @@ class InspectorGUI(ctk.CTk):
             body,
             fg_color=self.theme["panel"],
             corner_radius=22,
-            border_color=self.theme["border"],
             border_width=1,
         )
         self.output_card.grid(row=0, column=1, sticky="nsew")
@@ -291,7 +289,6 @@ class InspectorGUI(ctk.CTk):
             self.controls_panel,
             fg_color=self.theme["panel"],
             corner_radius=18,
-            border_color=self.theme["border"],
             border_width=1,
         )
         section.grid(
@@ -344,7 +341,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.pid_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=2, column=0, sticky="we", padx=18, pady=(0, 10))
 
         ctk.CTkSwitch(
@@ -399,7 +395,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.max_steps_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=0, column=0, sticky="we", pady=(0, 10))
 
         value_kind_combo = ctk.CTkComboBox(
@@ -416,7 +411,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.chunk_size_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=2, column=0, sticky="we", pady=(0, 10))
 
     def _build_manual_section(self) -> None:
@@ -443,7 +437,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.manual_value_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=1, column=0, sticky="we", pady=(0, 10))
 
         ctk.CTkSwitch(
@@ -458,7 +451,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.reference_depth_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=3, column=0, sticky="we", pady=(0, 10))
 
     def _build_persistence_section(self) -> None:
@@ -476,7 +468,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.save_path_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=0, column=0, sticky="we")
         ctk.CTkButton(
             save_row,
@@ -497,7 +488,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.load_path_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=0, column=0, sticky="we")
         ctk.CTkButton(
             load_row,
@@ -531,7 +521,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.patch_value_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=0, column=0, sticky="we", pady=(0, 10))
 
         patch_type_combo = ctk.CTkComboBox(
@@ -548,7 +537,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.auto_threshold_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=2, column=0, sticky="we", pady=(0, 10))
 
         ctk.CTkEntry(
@@ -557,7 +545,6 @@ class InspectorGUI(ctk.CTk):
             textvariable=self.enforce_interval_var,
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=3, column=0, sticky="we", pady=(0, 10))
 
         ctk.CTkSwitch(
@@ -576,7 +563,6 @@ class InspectorGUI(ctk.CTk):
             placeholder_text="addon_config.json",
             corner_radius=12,
             border_width=1,
-            border_color=self.theme["border"],
         ).grid(row=0, column=0, sticky="we", pady=(0, 12))
         ctk.CTkButton(config_row, text="Browse", width=100, command=self.browse_config).grid(
             row=0, column=1, padx=(12, 0)
@@ -622,7 +608,6 @@ class InspectorGUI(ctk.CTk):
             section,
             fg_color=self.theme["panel"],
             corner_radius=16,
-            border_color=self.theme["border"],
             border_width=1,
         )
         preview_card.grid(row=4, column=0, sticky="we", padx=18, pady=(0, 18))
@@ -668,7 +653,6 @@ class InspectorGUI(ctk.CTk):
             "button_hover_color": self.theme["accent_alt"],
             "dropdown_fg_color": self.theme["panel_alt"],
             "dropdown_hover_color": self.theme["accent_soft"],
-            "border_color": self.theme["border"],
             "border_width": 1,
             "corner_radius": 10,
         }
