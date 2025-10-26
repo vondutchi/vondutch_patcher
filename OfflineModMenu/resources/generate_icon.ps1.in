@@ -1,0 +1,8 @@
+$base64 = "@ICON_BASE64@"
+$bytes = [Convert]::FromBase64String($base64)
+$path = "@ICON_OUTPUT@"
+$directory = Split-Path -Parent $path
+if (-not (Test-Path $directory)) {
+    New-Item -Path $directory -ItemType Directory | Out-Null
+}
+[IO.File]::WriteAllBytes($path, $bytes)
