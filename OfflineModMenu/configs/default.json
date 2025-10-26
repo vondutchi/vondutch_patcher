@@ -1,0 +1,7 @@
+{
+    "notes": "This default configuration is used when no process specific file exists.",
+    "mods": {
+        "God Mode": { "enabled": false },
+        "Infinity Ammo": { "enabled": false }
+    }
+}

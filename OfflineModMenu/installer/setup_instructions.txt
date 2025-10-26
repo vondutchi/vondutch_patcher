@@ -1,0 +1,23 @@
+Offline Mod Menu — VonDutch Edition
+===================================
+
+Build Requirements
+------------------
+1. Install Visual Studio 2022 with the "Desktop development with C++" workload.
+2. Install vcpkg and integrate it with Visual Studio or keep the VCPKG_ROOT environment variable handy.
+3. From a Developer Command Prompt, navigate to the project root.
+
+Building with build.bat
+-----------------------
+1. Run build.bat.
+2. The script will create a build directory, configure CMake with the vcpkg toolchain, and compile the Release configuration.
+3. When complete, OfflineModMenu.exe is available under build/Release/.
+
+Runtime Disclaimer
+------------------
+This software is intended strictly for offline, singleplayer titles you own. Never attach to multiplayer or online experiences. You must confirm "YES I OWN THIS COPY" at runtime before any modifications are made.
+
+Installer Notes
+---------------
+The installer CMake project packages the compiled executable with resources, default configs, and the mods folder. Execute CMake within the installer directory after building the main project to create a distributable bundle.
+

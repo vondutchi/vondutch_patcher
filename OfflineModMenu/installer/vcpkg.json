@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "offlinemodmenu",
+  "version": "1.0.0",
+  "dependencies": [
+    "imgui[dx11,win32-binding]",
+    "nlohmann-json"
+  ]
+}
